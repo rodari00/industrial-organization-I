@@ -9,7 +9,7 @@ using LaTeXStrings
 # Setup parent and children directories
 ps_n = "ps0"
 parent_dir = "C:\\Users\\feder\\Dropbox\\Github\\industrial-organization-I"
-figures_dir = "$parent_dir\\figures"
+figures_dir = string(parent_dir,"\\",ps_n,"\\figures")
 
 
 # Matlab linspace function
