@@ -1,5 +1,4 @@
-
-Random.seed!(1234)
+using SparseArrays
 # Use part 1 to generate data, then:
 R = 1000 # num of sims
 
@@ -26,16 +25,24 @@ for m in 1:M
     end
 end
 
-# import P(Y|X) as conditional mean for each X = (X, Z_1, Z_2, Z_3)
-P = Matrix(CSV.read(string(parent_dir,"\\",ps_n,"\\probs.csv"), DataFrame, header = true));
+# compute P(Y|X) as conditional mean for each X = (X, Z_1, Z_2, Z_3)
+P_naive = zeros(Int64, (M, 8))
+for m in 1:M, y in 1:8
+   P_naive[m,y] = Y[m] == y 
+end
+
+P = Matrix(CSV.read(string(folder,"\\probs.csv"), DataFrame, header = true));
 
 
-# -- Simulation objective function -------------------------------------------------
+############# simulation objective function
 σ = 1
 # errors centered at 0
 u = rand(Normal(0,σ^2), (F,M,R));
 
-# Objective function
+a = 0.03*vec(u[:,:,100])*vec(u[:,:,100])'
+spa = sparse(a)
+
+# objective function
 function calc_mi(param, data)
 
     M = length(data[:,1]) # number of rows of the data
@@ -57,14 +64,14 @@ function calc_mi(param, data)
     # Indicate which outcomes are equilibria, for each m,r
     Eqm = zeros(Int64, (M,8,R))
     for m in 1:M, r in 1:R
-        Eqm[m,1,r] = (profit[1,m,1,r] < 0) * (profit[2,m,1,r] < 0) * (profit[3,m,1,r] < 0) #[0, 0, 0]
-        Eqm[m,2,r] = (profit[1,m,1,r] >= 0) * (profit[2,m,2,r] < 0) * (profit[3,m,2,r] < 0) #[1, 0, 0]
-        Eqm[m,3,r] = (profit[1,m,2,r] >= 0) * (profit[2,m,2,r] >= 0) * (profit[3,m,3,r] < 0) #[1, 1, 0]
-        Eqm[m,4,r] = (profit[1,m,2,r] >= 0) * (profit[2,m,3,r] < 0) * (profit[3,m,2,r] >= 0) #[1, 0, 1]
-        Eqm[m,5,r] = (profit[1,m,3,r] >= 0) * (profit[2,m,3,r] >= 0) * (profit[3,m,3,r] >= 0) #[1, 1, 1]
-        Eqm[m,6,r] = (profit[1,m,2,r] < 0) * (profit[2,m,1,r] >= 0) * (profit[3,m,2,r] < 0) #[0, 1, 0]
-        Eqm[m,7,r] = (profit[1,m,3,r] < 0) * (profit[2,m,2,r] >= 0) * (profit[3,m,2,r] >= 0) #[0, 1, 1]
-        Eqm[m,8,r] = (profit[1,m,2,r] < 0) * (profit[2,m,2,r] < 0) * (profit[3,m,1,r] >= 0) #[0, 0, 1]
+        Eqm[m,1,r] = (profit[1,m,1,r] < 0) * (profit[2,m,1,r] < 0) * (profit[3,m,1,r] < 0)
+        Eqm[m,2,r] = (profit[1,m,1,r] >= 0) * (profit[2,m,2,r] < 0) * (profit[3,m,2,r] < 0)
+        Eqm[m,3,r] = (profit[1,m,2,r] >= 0) * (profit[2,m,2,r] >= 0) * (profit[3,m,3,r] < 0)
+        Eqm[m,4,r] = (profit[1,m,2,r] >= 0) * (profit[2,m,3,r] < 0) * (profit[3,m,2,r] >= 0)
+        Eqm[m,5,r] = (profit[1,m,3,r] >= 0) * (profit[2,m,3,r] >= 0) * (profit[3,m,3,r] >= 0)
+        Eqm[m,6,r] = (profit[1,m,2,r] < 0) * (profit[2,m,1,r] >= 0) * (profit[3,m,2,r] < 0)
+        Eqm[m,7,r] = (profit[1,m,3,r] < 0) * (profit[2,m,2,r] >= 0) * (profit[3,m,2,r] >= 0)
+        Eqm[m,8,r] = (profit[1,m,2,r] < 0) * (profit[2,m,2,r] < 0) * (profit[3,m,1,r] >= 0)
     end
 
     # Identify which markets x simulations have unique eqm
