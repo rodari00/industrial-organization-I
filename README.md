@@ -1,5 +1,6 @@
 # industrial-organization-I
 
+```bash
 Folder PATH listing for volume Windows
 C:.
 │   
@@ -42,3 +43,4 @@ C:.
     ├── bin
     ├── data
     ├── figures
+```
